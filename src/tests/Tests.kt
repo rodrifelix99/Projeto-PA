@@ -10,5 +10,4 @@ class Tests {
         val json = JsonString("Olá")
         assertEquals("\"Olá\"", json.toJsonString())
     }
-
 }
