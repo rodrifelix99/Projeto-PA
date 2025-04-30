@@ -1,15 +1,16 @@
 package models
 
 class JsonArray(
-    private val list: List<JsonElement> = emptyList()
+    private val elements: List<JsonElement> = emptyList()
 ) : JsonElement() {
+    fun getElements(): List<JsonElement> = elements
 
     fun map(transform: (JsonElement) -> JsonElement): JsonArray =
-        JsonArray(list.map(transform))
+        JsonArray(elements.map(transform))
 
     fun filter(predicate: (JsonElement) -> Boolean): JsonArray =
-        JsonArray(list.filter(predicate))
+        JsonArray(elements.filter(predicate))
 
     override fun toJsonString(): String =
-        list.joinToString(prefix = "[", postfix = "]") { it.toJsonString() }
+        elements.joinToString(prefix = "[", postfix = "]") { it.toJsonString() }
 }
