@@ -29,7 +29,11 @@ class JsonStructureTests {
             listOf(JsonNumber(1), JsonNumber(2), JsonNumber(3))
         )
         val filtered = array.filter { (it as JsonNumber).toJsonString().toInt() > 1 }
-        assertEquals("[2, 3]", filtered.toJsonString())
+
+        val expectedArray = JsonArray(
+            listOf( JsonNumber(2 ), JsonNumber(3))
+        )
+        assertEquals(expectedArray, filtered)
     }
 
     @Test
@@ -57,7 +61,14 @@ class JsonStructureTests {
         println(obj.toJsonString())
         val filtered = obj.filter { (_, v) -> (v as JsonNumber).toJsonString().toInt() >= 2 }
         println(filtered.toJsonString())
-        assertEquals("{\"b\": 2, \"c\": 3}", filtered.toJsonString())
+
+        val expectedObject = JsonObject(
+            mapOf(
+                "b" to JsonNumber(2),
+                "c" to JsonNumber(3)
+            )
+        )
+        assertEquals(expectedObject, filtered)
     }
 
     @Test
