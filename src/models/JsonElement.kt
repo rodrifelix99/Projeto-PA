@@ -27,12 +27,10 @@ sealed class JsonElement {
         var valid = true
         this.accept {
             if (it is JsonArray) {
-                val types = it.getElements()
-                    .filterNot { el -> el is JsonNull }
-                    .map { el -> el::class }
-                    .toSet()
-                if (types.size > 1)
+                val firstType = it.getElements().firstOrNull()?.javaClass
+                if (it.getElements().any { element -> element.javaClass != firstType || element is JsonNull }) {
                     valid = false
+                }
             }
         }
         return valid
