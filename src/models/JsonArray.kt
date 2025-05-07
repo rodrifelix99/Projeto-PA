@@ -1,6 +1,6 @@
 package models
 
-class JsonArray(
+data class JsonArray(
     private val elements: List<JsonElement> = emptyList()
 ) : JsonElement() {
     fun getElements(): List<JsonElement> = elements

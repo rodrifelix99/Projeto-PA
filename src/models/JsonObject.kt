@@ -1,6 +1,6 @@
 package models
 
-class JsonObject(
+data class JsonObject(
     private val map: Map<String, JsonElement> = emptyMap()
 ) : JsonElement() {
     fun getMap(): Map<String, JsonElement> = map
