@@ -45,20 +45,24 @@ class GetJson(vararg controllers: KClass<*>) {
                 }
             }
             .forEach { (pattern, func) ->
-                // Adiciona cada rota à lista, definindo o handler que invoca o method e converte o resultado
                 routes += Route(pattern) { pathVars, queryParams ->
-                    // Constrói a lista de argumentos na ordem correta
-                    val args = func.parameters.drop(1).map { p ->
-                        when {
-                            // Se parâmetro anotado com @Path, obtém valor de pathVars
-                            p.findAnnotation<Path>() != null -> pathVars[p.name]!!
-                            // Se parâmetro anotado com @Param, obtém valor de queryParams
+                    val args: List<Any?> = func.parameters.drop(1).map { p ->
+                        // 1) obtém sempre o valor raw como String
+                        val raw = when {
+                            p.findAnnotation<Path>()  != null -> pathVars[p.name]!!
                             p.findAnnotation<Param>() != null -> queryParams[p.name]!!
-                            // Caso contrário, é erro de configuração
                             else -> error("Parâmetro sem @Path ou @Param: ${p.name}")
                         }
+                        // 2) converte para o tipo esperado pelo parâmetro
+                        when (p.type.classifier) {
+                            Int::class    -> raw.toInt()
+                            Double::class -> raw.toDouble()
+                            Boolean::class-> raw.toBoolean()
+                            String::class -> raw
+                            else          -> raw // ou error("Tipo não suportado: ${p.type}")
+                        }
                     }
-                    // Invoca o method e usa reflection com os argumentos e converte para JsonElement
+                    // 3) invoca o método com os argumentos tipados
                     val result = func.call(instance, *args.toTypedArray())
                     toJsonElement(result)
                 }

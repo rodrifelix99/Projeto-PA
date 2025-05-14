@@ -102,5 +102,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="jetbrains.kotlin.reflect" level="project" />
+    <orderEntry type="library" name="squareup.okhttp3.okhttp" level="project" />
   </component>
 </module>
