@@ -34,20 +34,20 @@ class GetJson(vararg controllers: KClass<*>) {
         // Cria instância do controlador usando o construtor primário
         val instance = controllerClass.primaryConstructor!!.call()
 
-        // Percorre cada método da classe procurando a anotação @Mapping
+        // Percorre cada method da classe à procura da anotação @Mapping
         controllerClass.memberFunctions
             .mapNotNull { func ->
                 func.findAnnotation<Mapping>()?.let { m ->
-                    // Constroi a rota completa combinando base e sub-path
+                    // Constrói a rota completa combinando base e subpath
                     val full = "/${base.trimStart('/')}/${m.value.trimStart('/')}"
                         .replace("//", "/")
                     full to func
                 }
             }
             .forEach { (pattern, func) ->
-                // Adiciona cada rota à lista, definindo o handler que invoca o método e converte o resultado
+                // Adiciona cada rota à lista, definindo o handler que invoca o method e converte o resultado
                 routes += Route(pattern) { pathVars, queryParams ->
-                    // Constroi a lista de argumentos na ordem correta
+                    // Constrói a lista de argumentos na ordem correta
                     val args = func.parameters.drop(1).map { p ->
                         when {
                             // Se parâmetro anotado com @Path, obtém valor de pathVars
@@ -58,7 +58,7 @@ class GetJson(vararg controllers: KClass<*>) {
                             else -> error("Parâmetro sem @Path ou @Param: ${p.name}")
                         }
                     }
-                    // Invoca o método refletivamente com os argumentos e converte para JsonElement
+                    // Invoca o method e usa reflection com os argumentos e converte para JsonElement
                     val result = func.call(instance, *args.toTypedArray())
                     toJsonElement(result)
                 }
@@ -78,14 +78,14 @@ class GetJson(vararg controllers: KClass<*>) {
             val uri = exchange.requestURI
             // Normaliza o path removendo a barra inicial
             val rawPath = uri.path.trimStart('/')
-            // Extrai parâmetros da query string para um mapa
+            // Extrai parâmetros da query ‘string’ para um mapa
             val queryParams = parseQuery(uri)
 
             // Procura a primeira rota cujo padrão, transformado em regex, bate com o path
             val route = routes.firstOrNull { r ->
                 val regex = ("^" +
                         r.pathPattern.trimStart('/')
-                            .replace("\\{[^}]+\\}".toRegex(), "([^/]+)") +
+                            .replace("\\{[^}]+}".toRegex(), "([^/]+)") +
                         "$"
                         ).toRegex()
                 regex.matches(rawPath)
@@ -102,7 +102,7 @@ class GetJson(vararg controllers: KClass<*>) {
             // Extrai os valores das path-vars e chama o handler para obter JsonElement
             val pathVars = extractPathVars(route.pathPattern, uri)
             val json = route.handler(pathVars, queryParams)
-            // Serializa o JsonElement para bytes
+            // Serialize o JsonElement para bytes
             val bytes = json.toJsonString().toByteArray()
 
             // Envia cabeçalhos de sucesso e escreve o corpo da resposta
@@ -118,14 +118,14 @@ class GetJson(vararg controllers: KClass<*>) {
     // Função auxiliar que extrai variáveis do path com base no padrão da rota
     private fun extractPathVars(pattern: String, uri: URI): Map<String, String> {
         // Encontra todos os nomes de variáveis definidos entre {…}
-        val names = "\\{([^}]+)\\}".toRegex()
+        val names = "\\{([^}]+)}".toRegex()
             .findAll(pattern)
             .map { it.groupValues[1] }
             .toList()
         // Constrói regex que captura os valores no URI
         val regex = ("^" +
                 pattern.trimStart('/')
-                    .replace("\\{[^}]+\\}".toRegex(), "([^/]+)") +
+                    .replace("\\{[^}]+}".toRegex(), "([^/]+)") +
                 "$"
                 ).toRegex()
 
@@ -137,7 +137,7 @@ class GetJson(vararg controllers: KClass<*>) {
         return names.zip(values).toMap()
     }
 
-    // Função auxiliar que converte a query string em mapa de pares chave-valor
+    // Função auxiliar que converte a query ‘string’ em mapa de pares chave-valor
     private fun parseQuery(uri: URI): Map<String, String> =
         uri.rawQuery
             // Divide por & e depois por =, garantindo pares válidos
