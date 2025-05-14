@@ -97,7 +97,7 @@ class GetJson(vararg controllers: KClass<*>) {
 
             // Se não encontrar rota, devolve 404
             if (route == null) {
-                val msg = "Not found"
+                val msg = "404 - Not found"
                 exchange.sendResponseHeaders(404, msg.length.toLong())
                 exchange.responseBody.use { it.write(msg.toByteArray()) }
                 return@createContext
