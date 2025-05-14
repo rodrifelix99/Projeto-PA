@@ -9,7 +9,7 @@ import kotlin.concurrent.thread
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class IntegrationTests {
-    val testPort = 8080
+    val testPort = 8081
 
     private val client = OkHttpClient()
     private lateinit var serverThread: Thread

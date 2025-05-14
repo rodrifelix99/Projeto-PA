@@ -1,5 +1,12 @@
 package jsonpackage.models
 
+/**
+ * JSON Array
+ *
+ * This class represents the Json Array that Extends Json Element
+ *
+ */
+
 data class JsonArray(
     private val elements: List<JsonElement> = emptyList()
 ) : JsonElement() {

@@ -1,5 +1,12 @@
 package jsonpackage.models
 
+/**
+ * JSON Object
+ *
+ * This class represents the Json Object that Extends Json Element
+ *
+ */
+
 data class JsonObject(
     private val map: Map<String, JsonElement> = emptyMap()
 ) : JsonElement() {

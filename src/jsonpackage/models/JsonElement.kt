@@ -1,5 +1,12 @@
 package jsonpackage.models
 
+/**
+ * JSON Element
+ *
+ * This class represents the Json Element
+ *
+ */
+
 sealed class JsonElement {
     abstract fun toJsonString(): String
 

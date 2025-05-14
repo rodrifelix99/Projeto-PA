@@ -11,6 +11,13 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 
+/**
+ * GetJson
+ *
+ * This class implements the GetJson API that will answer the API requests
+ *
+ */
+
 class GetJson(vararg controllers: KClass<*>) {
 
     // Estrutura interna que associa um padrão de rota ao seu manipulador

@@ -1,5 +1,13 @@
 package getjson
 
+/**
+ *
+ * Controller
+ *
+ * This class implements a Controller to validate the API Requests
+ *
+ */
+
 @Mapping("api")
 class Controller {
     @Mapping("ints")
