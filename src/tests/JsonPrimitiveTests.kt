@@ -1,10 +1,10 @@
 package tests
 
-import models.JsonBoolean
-import models.JsonNull
-import models.JsonNumber
+import jsonpackage.models.JsonBoolean
+import jsonpackage.models.JsonNull
+import jsonpackage.models.JsonNumber
 import org.junit.jupiter.api.Assertions.assertEquals
-import models.JsonString
+import jsonpackage.models.JsonString
 import org.junit.jupiter.api.Test
 
 class JsonPrimitiveTests {

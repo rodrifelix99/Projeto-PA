@@ -1,14 +1,14 @@
 package tests
 
-import models.JsonArray
-import models.JsonBoolean
-import models.JsonNull
-import models.JsonNull.validateArrayTypes
-import models.JsonNull.validateObjectKeys
-import models.JsonNumber
-import models.JsonObject
+import jsonpackage.models.JsonArray
+import jsonpackage.models.JsonBoolean
+import jsonpackage.models.JsonNull
+import jsonpackage.models.JsonNull.validateArrayTypes
+import jsonpackage.models.JsonNull.validateObjectKeys
+import jsonpackage.models.JsonNumber
+import jsonpackage.models.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
-import models.JsonString
+import jsonpackage.models.JsonString
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

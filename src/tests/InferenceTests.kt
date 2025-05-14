@@ -1,15 +1,15 @@
 package tests
 
-import models.JsonArray
-import models.JsonBoolean
-import models.JsonElement
-import models.JsonNull
-import models.JsonNumber
-import models.JsonObject
-import models.JsonString
+import jsonpackage.models.JsonArray
+import jsonpackage.models.JsonBoolean
+import jsonpackage.models.JsonElement
+import jsonpackage.models.JsonNull
+import jsonpackage.models.JsonNumber
+import jsonpackage.models.JsonObject
+import jsonpackage.models.JsonString
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import toJsonElement
+import jsonpackage.toJsonElement
 
 enum class EvalType {
     TEST, PROJECT, EXAM
