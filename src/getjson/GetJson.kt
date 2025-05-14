@@ -1,6 +1,7 @@
-// GetJson.kt
 package getjson
 
+import com.sun.net.httpserver.HttpServer
+import jsonpackage.models.JsonElement
 import jsonpackage.toJsonElement
 import java.net.InetSocketAddress
 import java.net.URI
@@ -9,140 +10,143 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
-import com.sun.net.httpserver.HttpServer
-import jsonpackage.models.JsonElement
 
 class GetJson(vararg controllers: KClass<*>) {
 
+    // Estrutura interna que associa um padrão de rota ao seu manipulador
     private data class Route(
         val pathPattern: String,
-        val httpMethod: String = "GET",
-        val handler: (Map<String,String>, Map<String,String>) -> JsonElement
+        val handler: (pathVars: Map<String, String>, queryParams: Map<String, String>) -> JsonElement
     )
 
+    // Lista mutável onde armazenamos todas as rotas registadas
     private val routes = mutableListOf<Route>()
 
+    // No construtor, regista cada controlador recebido via reflexão
     init {
-        // Registar controllers e métodos anotados
         controllers.forEach { registerController(it) }
-        println("=== Rotas registadas ===")
-        routes.forEach { println("  pattern='${it.pathPattern}'") }
     }
 
+    // Função que regista métodos anotados de um determinado controlador
     private fun registerController(controllerClass: KClass<*>) {
-        val basePath = controllerClass.findAnnotation<Mapping>()?.value ?: return
+        // Obtém o path base da classe através da anotação @Mapping ou sai se não existir
+        val base = controllerClass.findAnnotation<Mapping>()?.value ?: return
+        // Cria instância do controlador usando o construtor primário
         val instance = controllerClass.primaryConstructor!!.call()
-        for (func in controllerClass.memberFunctions) {
-            val m = func.findAnnotation<Mapping>() ?: continue
-            val fullPath = "/$basePath/${m.value}".replace("//", "/")
-            routes += Route(
-                pathPattern = fullPath,
-                handler = { pathVars, queryParams ->
-                    // Construir lista de argumentos para a invocação
-                    val args = func.parameters.drop(1).map { param ->
+
+        // Percorre cada método da classe procurando a anotação @Mapping
+        controllerClass.memberFunctions
+            .mapNotNull { func ->
+                func.findAnnotation<Mapping>()?.let { m ->
+                    // Constroi a rota completa combinando base e sub-path
+                    val full = "/${base.trimStart('/')}/${m.value.trimStart('/')}"
+                        .replace("//", "/")
+                    full to func
+                }
+            }
+            .forEach { (pattern, func) ->
+                // Adiciona cada rota à lista, definindo o handler que invoca o método e converte o resultado
+                routes += Route(pattern) { pathVars, queryParams ->
+                    // Constroi a lista de argumentos na ordem correta
+                    val args = func.parameters.drop(1).map { p ->
                         when {
-                            param.findAnnotation<Path>() != null ->
-                                pathVars[param.name]!!
-                            param.findAnnotation<Param>() != null ->
-                                queryParams[param.name]!!
-                            else ->
-                                throw IllegalArgumentException("Parâmetro não anotado")
+                            // Se parâmetro anotado com @Path, obtém valor de pathVars
+                            p.findAnnotation<Path>() != null -> pathVars[p.name]!!
+                            // Se parâmetro anotado com @Param, obtém valor de queryParams
+                            p.findAnnotation<Param>() != null -> queryParams[p.name]!!
+                            // Caso contrário, é erro de configuração
+                            else -> error("Parâmetro sem @Path ou @Param: ${p.name}")
                         }
                     }
-                    // Invocar e converter
+                    // Invoca o método refletivamente com os argumentos e converte para JsonElement
                     val result = func.call(instance, *args.toTypedArray())
                     toJsonElement(result)
                 }
-            )
-        }
+            }
     }
 
+    // Inicia o servidor HTTP e faz o dispatch interno de todas as rotas
     fun start(port: Int) {
+        // Cria servidor ligado à porta especificada
         val server = HttpServer.create(InetSocketAddress(port), 0)
+        // Usa um pool de threads para processar pedidos concorrentes
         server.executor = Executors.newFixedThreadPool(4)
 
-        // Só um context, puxa tudo para cá
+        // Regista um único context raiz onde todo o dispatch é feito manualmente
         server.createContext("/") { exchange ->
+            // Obtém o URI da requisição
             val uri = exchange.requestURI
-            val path = uri.path
+            // Normaliza o path removendo a barra inicial
+            val rawPath = uri.path.trimStart('/')
+            // Extrai parâmetros da query string para um mapa
             val queryParams = parseQuery(uri)
-            val stripped = path.removePrefix("/")
 
-            routes.forEach { route ->
+            // Procura a primeira rota cujo padrão, transformado em regex, bate com o path
+            val route = routes.firstOrNull { r ->
                 val regex = ("^" +
-                        route.pathPattern
-                            .replace("\\{[^}]+\\}".toRegex(), "([^/]+)")
-                            .removePrefix("/") +
+                        r.pathPattern.trimStart('/')
+                            .replace("\\{[^}]+\\}".toRegex(), "([^/]+)") +
                         "$"
                         ).toRegex()
-                println("    tenta '${route.pathPattern}' => regex='${regex.pattern}' → matches? ${regex.matches(stripped)}")
+                regex.matches(rawPath)
             }
 
-            // Acha a rota cujo regex bate com o path completo
-            val route = routes.firstOrNull { route ->
-                // Constrói o regex a partir do pattern
-                val regex = ("^" +
-                        route.pathPattern
-                            .replace("\\{[^}]+\\}".toRegex(), "([^/]+)")
-                            .removePrefix("/") +
-                        "$"
-                        ).toRegex()
-                regex.matches(path.removePrefix("/"))
-            }
-
+            // Se não encontrar rota, devolve 404
             if (route == null) {
                 val msg = "Not found"
-                exchange.sendResponseHeaders(404, msg.toByteArray().size.toLong())
+                exchange.sendResponseHeaders(404, msg.length.toLong())
                 exchange.responseBody.use { it.write(msg.toByteArray()) }
                 return@createContext
             }
 
-            // Se houver rota, extrai os vars e chama o handler
+            // Extrai os valores das path-vars e chama o handler para obter JsonElement
             val pathVars = extractPathVars(route.pathPattern, uri)
-            val json    = route.handler(pathVars, queryParams)
-            val resp    = json.toJsonString().toByteArray()
+            val json = route.handler(pathVars, queryParams)
+            // Serializa o JsonElement para bytes
+            val bytes = json.toJsonString().toByteArray()
 
-            exchange.sendResponseHeaders(200, resp.size.toLong())
-            exchange.responseBody.use { it.write(resp) }
+            // Envia cabeçalhos de sucesso e escreve o corpo da resposta
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }
         }
 
+        // Arranca o servidor de forma não bloqueante
         server.start()
         println("Server started on port $port")
     }
 
+    // Função auxiliar que extrai variáveis do path com base no padrão da rota
     private fun extractPathVars(pattern: String, uri: URI): Map<String, String> {
-        // 1. Extrai os nomes dos parâmetros: tudo o que está entre { e }
-        val paramNames = "\\{([^}]+)\\}".toRegex()
+        // Encontra todos os nomes de variáveis definidos entre {…}
+        val names = "\\{([^}]+)\\}".toRegex()
             .findAll(pattern)
             .map { it.groupValues[1] }
             .toList()
+        // Constrói regex que captura os valores no URI
+        val regex = ("^" +
+                pattern.trimStart('/')
+                    .replace("\\{[^}]+\\}".toRegex(), "([^/]+)") +
+                "$"
+                ).toRegex()
 
-        // 2. Constrói um regex a partir do pattern, substituindo {var} por "([^/]+)"
-        val regexPattern = pattern
-            .replace("\\{[^}]+\\}".toRegex(), "([^/]+)")
-            .let { "^$it\$" } // garante match completo
-        val regex = regexPattern.toRegex()
-
-        // 3. Tenta casar com o path real
-        val path = uri.path
-        val match = regex.matchEntire(path) ?: return emptyMap()
-
-        // 4. Os grupos de captura correspondem aos valores
-        val values = match.groupValues.drop(1) // descarta groupValues[0] = match completo
-
-        // 5. Mapeia nome -> valor
-        return paramNames.zip(values).toMap()
+        // Tenta casar o path normalizado; se falhar, retorna mapa vazio
+        val match = regex.matchEntire(uri.path.trimStart('/')) ?: return emptyMap()
+        // Obtém todos os grupos de captura (exceto o match completo)
+        val values = match.groupValues.drop(1)
+        // Associa cada nome ao respetivo valor capturado
+        return names.zip(values).toMap()
     }
 
-    private fun parseQuery(uri: URI): Map<String,String> {
-        return uri.rawQuery
+    // Função auxiliar que converte a query string em mapa de pares chave-valor
+    private fun parseQuery(uri: URI): Map<String, String> =
+        uri.rawQuery
+            // Divide por & e depois por =, garantindo pares válidos
             ?.split("&")
             ?.mapNotNull {
                 it.split("=").takeIf { parts -> parts.size == 2 }
                     ?.let { parts -> parts[0] to parts[1] }
             }
+            // Se não houver query, devolve mapa vazio
             ?.toMap()
             ?: emptyMap()
-    }
-
 }
