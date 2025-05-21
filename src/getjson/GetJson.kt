@@ -52,7 +52,7 @@ class GetJson(vararg controllers: KClass<*>) {
             if (mapping != null) {
                 // monta o pattern completo
                 val full = "/${base.trimStart('/')}/${mapping.value.trimStart('/')}"
-                    .replace("//", "/")
+                    .replace("//", "/") // manhosa aprovada pelo felix :p
                 // adiciona à lista de routes
                 routes += Route(full) { pathVars, queryParams ->
                     val args = mutableListOf<Any?>()
