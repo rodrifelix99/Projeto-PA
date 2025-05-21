@@ -175,7 +175,7 @@ println(toJsonElement(Status.OPEN).toJsonString())
    * `GET http://localhost:8080/api/path/foo` → `"foo!"`
    * `GET http://localhost:8080/api/args?n=3&text=PA` → `{"PA":"PAPAPA"}`
 
-**Under the hood**, `GetJson` uses reflection to:
+`GetJson` uses reflection to:
 
 * Discover methods annotated with `@Mapping`
 * Extract path‐variables (`{…}`) and query params (`?…=…`)
@@ -193,16 +193,6 @@ println(toJsonElement(listOf(4,5,6)).toJsonString())
 println(toJsonElement(mapOf("X" to 9)).toJsonString())
 // → {"X":9}
 ```
-
----
-
-## Running & Testing
-
-* **Run application**: `./gradlew run` (or via your IDE's main())
-* **Run tests**: `./gradlew test`
-
-   * Unit tests for model & inference
-   * Integration tests (with OkHttp) for GetJson endpoints
 
 ---
 
