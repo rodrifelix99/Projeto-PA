@@ -5,6 +5,7 @@ package jsonpackage.models
  *
  * This class represents the Json Object that Extends Json Element
  *
+ * @property map The map of key-value pairs representing the JSON object.
  */
 
 data class JsonObject(

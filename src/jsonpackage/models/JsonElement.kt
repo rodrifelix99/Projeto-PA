@@ -8,6 +8,11 @@ package jsonpackage.models
  */
 
 sealed class JsonElement {
+    /**
+     * Converts the JSON element to a JSON string representation.
+     *
+     * @return The JSON string representation of the element.
+     */
     abstract fun toJsonString(): String
 
     fun JsonElement.accept(visitor: (JsonElement) -> Unit) {

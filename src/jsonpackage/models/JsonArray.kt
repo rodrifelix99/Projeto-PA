@@ -5,6 +5,7 @@ package jsonpackage.models
  *
  * This class represents the Json Array that Extends Json Element
  *
+ * @property elements The list of JSON elements in the array.
  */
 
 data class JsonArray(

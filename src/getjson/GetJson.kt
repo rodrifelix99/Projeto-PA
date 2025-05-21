@@ -47,38 +47,36 @@ class GetJson(vararg controllers: KClass<*>) {
         val instance = controllerClass.primaryConstructor!!.call()
 
         // Percorre cada method da classe à procura da anotação @Mapping
-        controllerClass.memberFunctions
-            .mapNotNull { func ->
-                func.findAnnotation<Mapping>()?.let { m ->
-                    // Constrói a rota completa combinando base e subpath
-                    val full = "/${base.trimStart('/')}/${m.value.trimStart('/')}"
-                        .replace("//", "/")
-                    full to func
-                }
-            }
-            .forEach { (pattern, func) ->
-                routes += Route(pattern) { pathVars, queryParams ->
-                    val args: List<Any?> = func.parameters.drop(1).map { p ->
-                        // 1) obtém sempre o valor raw como String
-                        val raw = when {
-                            p.findAnnotation<Path>()  != null -> pathVars[p.name]!!
-                            p.findAnnotation<Param>() != null -> queryParams[p.name]!!
-                            else -> error("Parâmetro sem @Path ou @Param: ${p.name}")
+        for (func in controllerClass.memberFunctions) {
+            val mapping = func.findAnnotation<Mapping>()
+            if (mapping != null) {
+                // monta o padrão completo
+                val full = "/${base.trimStart('/')}/${mapping.value.trimStart('/')}"
+                    .replace("//", "/")
+                // adiciona à lista de rotas
+                routes += Route(full) { pathVars, queryParams ->
+                    val args = mutableListOf<Any?>()
+                    for (p in func.parameters.drop(1)) {
+                        val raw = if (p.findAnnotation<Path>() != null) {
+                            pathVars[p.name]!!
+                        } else if (p.findAnnotation<Param>() != null) {
+                            queryParams[p.name]!!
+                        } else {
+                            error("Sem @Path ou @Param: ${p.name}")
                         }
-                        // 2) converte para o tipo esperado pelo parâmetro
-                        when (p.type.classifier) {
+                        args += when (p.type.classifier) {
                             Int::class    -> raw.toInt()
                             Double::class -> raw.toDouble()
                             Boolean::class-> raw.toBoolean()
                             String::class -> raw
-                            else          -> raw // ou error("Tipo não suportado: ${p.type}")
+                            else          -> raw
                         }
                     }
-                    // 3) invoca o método com os argumentos tipados
                     val result = func.call(instance, *args.toTypedArray())
                     toJsonElement(result)
                 }
             }
+        }
     }
 
     // Inicia o servidor HTTP e faz o dispatch interno de todas as rotas
@@ -133,24 +131,25 @@ class GetJson(vararg controllers: KClass<*>) {
 
     // Função auxiliar que extrai variáveis do path com base no padrão da rota
     private fun extractPathVars(pattern: String, uri: URI): Map<String, String> {
-        // Encontra todos os nomes de variáveis definidos entre {…}
-        val names = "\\{([^}]+)}".toRegex()
-            .findAll(pattern)
-            .map { it.groupValues[1] }
-            .toList()
-        // Constrói regex que captura os valores no URI
-        val regex = ("^" +
-                pattern.trimStart('/')
-                    .replace("\\{[^}]+}".toRegex(), "([^/]+)") +
-                "$"
-                ).toRegex()
+        val result = mutableMapOf<String,String>()
 
-        // Tenta casar o path normalizado; se falhar, retorna mapa vazio
-        val match = regex.matchEntire(uri.path.trimStart('/')) ?: return emptyMap()
-        // Obtém todos os grupos de captura (exceto o match completo)
-        val values = match.groupValues.drop(1)
-        // Associa cada nome ao respetivo valor capturado
-        return names.zip(values).toMap()
+        // Remove barras iniciais e parte o padrão e o path por “/”
+        val patternParts = pattern.trimStart('/').split('/')
+        val pathParts = uri.path.trimStart('/').split('/')
+
+        // Para cada segmento do padrão, se for do tipo {nome}, associa ao valor correspondente
+        for (i in patternParts.indices) {
+            val pat = patternParts[i]
+            if (pat.startsWith("{") && pat.endsWith("}")) {
+                val name = pat.removePrefix("{").removeSuffix("}")
+                // Garante que existe valor naquele índice
+                if (i < pathParts.size) {
+                    result[name] = pathParts[i]
+                }
+            }
+        }
+
+        return result
     }
 
     // Função auxiliar que converte a query ‘string’ em mapa de pares chave-valor

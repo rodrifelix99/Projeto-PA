@@ -5,6 +5,7 @@ package jsonpackage.models
  *
  * This class represents the Json String that Extends Json Element
  *
+ * @property value The string value of the JSON element.
  */
 
 

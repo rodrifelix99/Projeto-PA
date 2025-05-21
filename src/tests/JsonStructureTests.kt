@@ -94,4 +94,26 @@ class JsonStructureTests {
         assertTrue(validArray.validateArrayTypes())
     }
 
+    @Test
+    fun testArrayWithMap() {
+        val array = JsonArray(
+            listOf(
+                JsonObject(
+                    mapOf(
+                        "a" to JsonNumber(1),
+                        "b" to JsonNumber(2)
+                    )
+                ),
+                JsonObject(
+                    mapOf(
+                        "c" to JsonNumber(3),
+                        "d" to JsonNumber(4)
+                    )
+                )
+            )
+        )
+        println(array.toJsonString())
+        assertEquals("[{\"a\": 1, \"b\": 2}, {\"c\": 3, \"d\": 4}]", array.toJsonString())
+    }
+
 }
