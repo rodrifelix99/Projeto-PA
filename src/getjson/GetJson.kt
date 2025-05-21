@@ -25,35 +25,35 @@ import kotlin.reflect.full.primaryConstructor
 
 class GetJson(vararg controllers: KClass<*>) {
 
-    // Estrutura interna que associa um padrão de rota ao seu manipulador
+    // Estrutura interna que associa um pattern do Route ao seu Handler
     private data class Route(
         val pathPattern: String,
         val handler: (pathVars: Map<String, String>, queryParams: Map<String, String>) -> JsonElement
     )
 
-    // Lista mutável onde armazenamos todas as rotas registadas
+    // Muttable List onde armazenamos todas os Routes registadas
     private val routes = mutableListOf<Route>()
 
-    // No construtor, regista cada controlador recebido via reflexão
+    // No construtor, regista cada Controller recebido via Reflection
     init {
         controllers.forEach { registerController(it) }
     }
 
-    // Função que regista métodos anotados de um determinado controlador
+    // Função que regista métodos mapeados de um determinado Controller
     private fun registerController(controllerClass: KClass<*>) {
-        // Obtém o path base da classe através da anotação @Mapping ou sai se não existir
+        // Obtém o path base da classe através do mapeamento @Mapping ou sai se não existir
         val base = controllerClass.findAnnotation<Mapping>()?.value ?: return
-        // Cria instância do controlador usando o construtor primário
+        // Cria uma instância do controller usando o construtor principal
         val instance = controllerClass.primaryConstructor!!.call()
 
-        // Percorre cada method da classe à procura da anotação @Mapping
+        // Percorre cada metodo da classe à procura do mapeamento @Mapping
         for (func in controllerClass.memberFunctions) {
             val mapping = func.findAnnotation<Mapping>()
             if (mapping != null) {
-                // monta o padrão completo
+                // monta o pattern completo
                 val full = "/${base.trimStart('/')}/${mapping.value.trimStart('/')}"
                     .replace("//", "/")
-                // adiciona à lista de rotas
+                // adiciona à lista de routes
                 routes += Route(full) { pathVars, queryParams ->
                     val args = mutableListOf<Any?>()
                     for (p in func.parameters.drop(1)) {
@@ -79,23 +79,23 @@ class GetJson(vararg controllers: KClass<*>) {
         }
     }
 
-    // Inicia o servidor HTTP e faz o dispatch interno de todas as rotas
+    // Inicia o servidor HTTP e faz o dispatch interno de todas as routes
     fun start(port: Int) {
-        // Cria servidor ligado à porta especificada
+        // Cria o servidor ligado à porta especificada
         val server = HttpServer.create(InetSocketAddress(port), 0)
-        // Usa um pool de threads para processar pedidos concorrentes
+        // Usa um pool de threads para processar todos os pedidos concorrentes
         server.executor = Executors.newFixedThreadPool(4)
 
         // Regista um único context raiz onde todo o dispatch é feito manualmente
         server.createContext("/") { exchange ->
-            // Obtém o URI da requisição
+            // Obtém o URI do request
             val uri = exchange.requestURI
-            // Normaliza o path removendo a barra inicial
+            // Normaliza o path removendo a barra inicial "/"
             val rawPath = uri.path.trimStart('/')
-            // Extrai parâmetros da query ‘string’ para um mapa
+            // Extrai os parâmetros da query ‘string’ para um mapeamento
             val queryParams = parseQuery(uri)
 
-            // Procura a primeira rota cujo padrão, transformado em regex, bate com o path
+
             val route = routes.firstOrNull { r ->
                 val regex = ("^" +
                         r.pathPattern.trimStart('/')
