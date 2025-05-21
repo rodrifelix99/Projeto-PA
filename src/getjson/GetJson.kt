@@ -16,6 +16,11 @@ import kotlin.reflect.full.primaryConstructor
  *
  * This class implements the GetJson API that will answer the API requests
  *
+ * It uses reflection to find the @Mapping annotations and the @Path and @Param
+ * annotations to extract the parameters from the request and call the
+ * corresponding method in the controller.
+ *
+ * @param controllers The controllers to register in the server
  */
 
 class GetJson(vararg controllers: KClass<*>) {

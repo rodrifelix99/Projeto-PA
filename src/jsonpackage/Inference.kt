@@ -9,6 +9,15 @@ import jsonpackage.models.JsonObject
 import jsonpackage.models.JsonString
 import kotlin.reflect.full.declaredMemberProperties
 
+/**
+* Converts a Kotlin object to a JSON element.
+*
+* This function uses reflection to inspect the properties of the object and convert them to JSON.
+* It supports primitive types, lists, maps, and data classes.
+*
+* @param value The Kotlin object to convert.
+* @return A JsonElement representing the object in JSON format.
+*/
 fun toJsonElement(value: Any?): JsonElement {
     return when (value) {
         null -> JsonNull

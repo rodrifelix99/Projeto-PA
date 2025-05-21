@@ -1,10 +1,10 @@
 ﻿# JSONPackage
 
-A simple Kotlin library for building, manipulating and serializing JSON in memory — and for turning your own Kotlin objects into JSON using reflection. Ideal for academic projects!
+A simple Kotlin library for building, manipulating and serializing JSON in memory and for turning your own Kotlin objects into JSON using reflection. Ideal for academic projects!
 
 ---
 
-## 📦 What’s Inside
+## What’s Inside
 
 1. **Phase 1: JSON Model**  
    - `JsonElement` (sealed base class)  
@@ -23,16 +23,15 @@ A simple Kotlin library for building, manipulating and serializing JSON in memor
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Clone** this repo into your IDE.  
 2. Make sure you have **Kotlin 1.6+**.  
 3. Import the module `jsonpackage` into your settings.
-4. You’re ready to code!
 
 ---
 
-## 🏗 Phase 1 – JSON Model
+## Phase 1 – JSON Model
 
 ### Create JSON Values by Hand
 
@@ -88,7 +87,7 @@ println(scores.toJsonString())
 
 ---
 
-## 🔍 Phase 2 – Inference
+## Phase 2 – Inference
 
 ### `toJsonElement` in Action
 
@@ -113,7 +112,7 @@ println(s.toJsonString())  // → "OPEN"
 
 ---
 
-## ⚙️ Examples
+## Examples
 
 ```kotlin
 // Turn a Kotlin List into JSON
@@ -129,13 +128,13 @@ println(toJsonElement(map).toJsonString())
 
 ---
 
-## ✅ Running Tests
+## Running Tests
 
 We use **JUnit 5** for unit tests. All functionalities (model, filter/map, visitor, inference) have corresponding tests in `src/tests`.
 
 ---
 
-## 👥 Group Details
+## Group Details
 
 * **Miguel Carriço** — 73745 — [jmabc1@iscte-iul.pt](mailto:jmabc1@iscte-iul.pt)
 * **Rodrigo Barata** — 131361 — [rodrifelix99@gmail.com](mailto:rodrifelix99@gmail.com)
