@@ -9,7 +9,7 @@ import getjson.Controller
  */
 
 fun main() {
-    // Instancia o framework com o teu Controller
+    // Arranca o framework com o Controller
     val app = GetJson(Controller::class)
     // Arranca na porta 8081
     app.start(8081)

@@ -1,7 +1,8 @@
 ﻿# JSONPackage
 
-A simple Kotlin library for building, manipulating and serializing JSON in memory and for turning your own Kotlin objects into JSON using reflection. Ideal for academic projects!
-
+A simple Kotlin library for building, manipulating and serializing JSON in memory and for turning your own Kotlin objects into JSON using reflection.
+ISCTE-IUL - Masters in Computer Engineering - 2025
+Advanced Programming
 ---
 
 ## What’s Inside
