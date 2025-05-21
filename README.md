@@ -1,8 +1,9 @@
 ﻿# JSONPackage
 
-A simple Kotlin library for building, manipulating and serializing JSON in memory and for turning your own Kotlin objects into JSON using reflection.
-ISCTE-IUL - Masters in Computer Engineering - 2025
-Advanced Programming
+A simple Kotlin library for building, manipulating and serializing JSON in memory and for turning your own Kotlin objects into JSON using reflection.  
+
+ISCTE-IUL – Masters in Computer Engineering – Advanced Programming 2025
+
 ---
 
 ## What’s Inside
@@ -22,12 +23,18 @@ Advanced Programming
    - `Enum<*>` → `JsonString(name)`  
    - Data classes via Kotlin reflection  
 
+3. **Phase 3: GetJson HTTP Framework**  
+   - Annotations: `@Mapping`, `@Path`, `@Param`  
+   - `GetJson` class to register controllers and start a HTTP server  
+   - Reflection is used to map URL paths and query parameters into controller method calls  
+   - Serialization of return values using your JSON model  
+
 ---
 
 ## Getting Started
 
 1. **Clone** this repo into your IDE.  
-2. Make sure you have **Kotlin 1.6+**.  
+2. Make sure you have **Kotlin 1.6+** and **Gradle**.  
 3. Import the module `jsonpackage` into your settings.
 
 ---
@@ -55,15 +62,12 @@ val scores = JsonArray(listOf(
 
 ```kotlin
 // Only adults
-val adults = JsonArray(
-  listOf(
-    JsonNumber(17), JsonNumber(20), JsonNumber(15)
-  )
-).filter { (it as JsonNumber).value.toInt() >= 18 }
+val adults = JsonArray(listOf(17,20,15).map { JsonNumber(it) })
+  .filter { (it as JsonNumber).value.toInt() >= 18 }
 
 // Double every number
-val doubled = scores.map { 
-  JsonNumber((it as JsonNumber).value.toInt() * 2) 
+val doubled = scores.map {
+  JsonNumber((it as JsonNumber).value.toInt() * 2)
 }
 ```
 
@@ -72,8 +76,8 @@ val doubled = scores.map {
 ```kotlin
 import jsonpackage.extensions.*
 
-val validKeys    = person.validateObjectKeys()    // no blank keys?
-val uniformTypes = scores.validateArrayTypes()    // same type and no nulls?
+val okKeys    = person.validateObjectKeys()    // no blank keys?
+val uniform   = scores.validateArrayTypes()    // same type, no nulls?
 ```
 
 ### Serialize to String
@@ -107,31 +111,98 @@ Supports nested data classes, lists, maps, enums:
 
 ```kotlin
 enum class Status { OPEN, CLOSED }
-val s = toJsonElement(Status.OPEN)
-println(s.toJsonString())  // → "OPEN"
+println(toJsonElement(Status.OPEN).toJsonString())
+// → "OPEN"
 ```
+
+---
+
+## Phase 3 – GetJson HTTP Framework
+
+`GetJson` lets you expose Kotlin controller classes as simple HTTP/GET endpoints:
+
+1. **Define Annotations**
+
+   ```kotlin
+   // Mapping.kt
+   @Target(CLASS, FUNCTION)
+   @Retention(RUNTIME)
+   annotation class Mapping(val value: String)
+
+   // Path.kt
+   @Target(VALUE_PARAMETER)
+   @Retention(RUNTIME)
+   annotation class Path
+
+   // Param.kt
+   @Target(VALUE_PARAMETER)
+   @Retention(RUNTIME)
+   annotation class Param
+   ```
+
+2. **Write a Controller**
+
+   ```kotlin
+   @Mapping("api")
+   class Controller {
+     @Mapping("ints")
+     fun demo(): List<Int> = listOf(1, 2, 3)
+
+     @Mapping("pair")
+     fun obj(): Pair<String, String> = "um" to "dois"
+
+     @Mapping("path/{id}")
+     fun path(@Path id: String): String = "$id!"
+
+     @Mapping("args")
+     fun args(@Param n: Int, @Param text: String): Map<String,String> =
+       mapOf(text to text.repeat(n))
+   }
+   ```
+
+3. **Start the Server**
+
+   ```kotlin
+   fun main() {
+     GetJson(Controller::class).start(8080)
+   }
+   ```
+
+4. **Access Endpoints**
+
+   * `GET http://localhost:8080/api/ints` → `[1,2,3]`
+   * `GET http://localhost:8080/api/pair` → `{"first":"um","second":"dois"}`
+   * `GET http://localhost:8080/api/path/foo` → `"foo!"`
+   * `GET http://localhost:8080/api/args?n=3&text=PA` → `{"PA":"PAPAPA"}`
+
+**Under the hood**, `GetJson` uses reflection to:
+
+* Discover methods annotated with `@Mapping`
+* Extract path‐variables (`{…}`) and query params (`?…=…`)
+* Invoke your controller methods with typed arguments
+* Serialize the return value via `toJsonElement` → JSON string
 
 ---
 
 ## Examples
 
 ```kotlin
-// Turn a Kotlin List into JSON
-val list = listOf(1, 2, 3)
-println(toJsonElement(list).toJsonString())
-// → [1,2,3]
+println(toJsonElement(listOf(4,5,6)).toJsonString())
+// → [4,5,6]
 
-// Turn a Map into JSON
-val map = mapOf("A" to 1, "B" to 2)
-println(toJsonElement(map).toJsonString())
-// → {"A":1,"B":2}
+println(toJsonElement(mapOf("X" to 9)).toJsonString())
+// → {"X":9}
 ```
 
 ---
 
-## Running Tests
+## Running & Testing
 
-We use **JUnit 5** for unit tests. All functionalities (model, filter/map, visitor, inference) have corresponding tests in `src/tests`.
+* **Run application**: `./gradlew run` (or via your IDE's main())
+* **Run tests**: `./gradlew test`
+
+   * Unit tests for model & inference
+   * Integration tests (with OkHttp) for GetJson endpoints
 
 ---
 
@@ -140,6 +211,8 @@ We use **JUnit 5** for unit tests. All functionalities (model, filter/map, visit
 * **Miguel Carriço** — 73745 — [jmabc1@iscte-iul.pt](mailto:jmabc1@iscte-iul.pt)
 * **Rodrigo Barata** — 131361 — [rodrifelix99@gmail.com](mailto:rodrifelix99@gmail.com)
 
-## UML
+---
+
+## UML Diagram
 
 ![uml](https://github.com/user-attachments/assets/4e861f17-1bfa-4bd9-9280-e5acb7e3d330)
